@@ -41,16 +41,16 @@ enum CARD_STATE {
 
 // 读卡消息
 enum CARD_MSG {
-    NOTHING,                        = 0,    // 无新信息
-    NEW_CARD_DETECTED,              = 10,   // 发现新卡片（亦可能识别错误）
-    NEW_CARD_CONFIRMED,             = 11,   // 确认新卡片
-    SAME_CARD_AGAIN,                = 20,   // 再次读到同一张卡
-    CARD_DETATCHED,                 = 30,   // 卡片已取走（亦可能接触不良）
-    CARD_DETATCH_CONFIRMED,         = 31,   // 确认卡片已取走
-    CARD_READ_STOP,                 = 40,   // 卡片读取中断
-    ERROR_DIFFERENT_CARD,           = 97,   // 错误：探测到不同卡片
-    ERROR_NOT_AVAILABLE_CARD,       = 98,   // 错误：车辆不可用
-    ERROR_OTHER_CARD,               = 99,   // 错误：预留
+    NOTHING,                        // 无新信息
+    NEW_CARD_DETECTED,              // 发现新卡片（亦可能识别错误）
+    NEW_CARD_CONFIRMED,             // 确认新卡片
+    SAME_CARD_AGAIN,                // 再次读到同一张卡
+    CARD_DETATCHED,                 // 卡片已取走（亦可能接触不良）
+    CARD_DETATCH_CONFIRMED,         // 确认卡片已取走
+    CARD_READ_STOP,                 // 卡片读取中断
+    ERROR_DIFFERENT_CARD,           // 错误：探测到不同卡片
+    ERROR_NOT_AVAILABLE_CARD,            // 错误：车辆不可用
+    ERROR_OTHER_CARD,                    // 错误：预留
 };
 
 // 通讯请求编码
@@ -250,7 +250,7 @@ class Display {
 
     private:
         bool _isDisplaying;
-
+		const unsigned long DURATION_short = 50;
         const unsigned long DURATION = 5000;
         const unsigned long DURATION_LONG = 10000;
 };

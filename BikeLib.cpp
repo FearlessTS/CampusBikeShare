@@ -767,9 +767,11 @@ bool Display::isDisplaying() {
  * 显示等待信息
  */
 void Display::displayWait() {
+	u8g.firstPage(); 
+	do {
     u8g.setFont(u8g_font_unifont);
-    u8g.drawStr( 20, 45, "Please Wait!");
-
+    u8g.drawStr( 10, 40, "Please Wait...");
+	} while( u8g.nextPage() );
     // 更改显示信息标志
     _isDisplaying = true;
 }
@@ -778,9 +780,12 @@ void Display::displayWait() {
  * 清空显示信息
  */
 void Display::displayClear() {
-    // 清空显示信息
-    
-    // 更改显示信息标志
+	u8g.firstPage(); 
+    do {
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(0, 0, "");
+        } while( u8g.nextPage() );
+	delay(DURATION_short);
     _isDisplaying = false;
 }
 
@@ -789,88 +794,210 @@ void Display::displayClear() {
  * @param msg 通讯信息层回复编码
  */
 void Display::displayComMSG(const RESPONSE_MSG msg) {
+	u8g.firstPage();
+	do {
     switch(msg) {
-        case RENT_SUCCESS:
+		case RESPONSE_NULL:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 45, "Borrow Succeed!");
+            u8g.drawStr(10, 40, "COM:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+		    u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(0, 0, "");
+        break;
+        case RENT_SUCCESS:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+		    u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "Rent Succeed!");
         break;
         case RENT_FAIL_USER_OCCUPIED:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "The user is occupied!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Rent Fail!");
+            u8g.drawStr(10, 45, "System Error");
         break;
         case RENT_FAIL_USER_NONEXISTENT:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "No user information!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Rent Fail!");
+            u8g.drawStr(10, 45, "System Error");
         break;
         case RENT_FAIL_NEGATIVE_BALANCE:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "No balance!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Rent Fail!");
+            u8g.drawStr(10, 45, "No Balance");
         break;
         case RENT_FAIL_BIKE_OCCUPIED:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "The bike is occupied!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Rent Fail!");
+            u8g.drawStr(10, 45, "Bike Occupied");
         break;
         case RENT_FAIL_BIKE_UNAVAILABLE:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "The bike is unavailable!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Rent Fail!");
+            u8g.drawStr(10, 45, "Bike Broken");
         break;
         case RETURN_SUCCESS:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 45, "Return Succeed!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+		    u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "Return Success!");
         break;
         case RETURN_FAIL_USER_NOT_MATCH:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "The bike is unavailable!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Return Fail!");
+            u8g.drawStr(10, 45, "System Error");
         break;
         case RETURN_FAIL_ORDER_NONEXISTENT:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "The bike is unavailable!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Return Fail!");
+            u8g.drawStr(10, 45, "System Error");
         break;
         case LOCATION_SUCCESS:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 45, "Locating Succeed!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "");
         break;
         case LOCATION_FAIL:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "Locating Fail!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "");
         break;
         case LOWBATTERY_SUCCESS:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 45, "Low Battery Succeed!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "");
         break;
         case LOWBATTERY_FAIL:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "Low Battery!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "");
         break;
         case ERROR_REQUEST_OVERTIME:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "Communication Overtime!");
+            u8g.drawStr(10, 40, "COM:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "No Network");
+            u8g.drawStr(10, 45, "Try Again!");
         break;
         case ERROR_STATUS:
-        case ERROR_INVALID_RESPONSE:
-        case ERROR_DECODE:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "Communication Error!");
-        break;
+            u8g.drawStr(10, 40, "COM:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "System Error!");
+		break;
+        case ERROR_INVALID_RESPONSE:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "COM:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "System Error!");
+		break;
+        case ERROR_DECODE:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "COM:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "System Error!");
+		break;
         case ERROR_OTHER:
         default:
+			if(isDebug)
             u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 35, "Error!");
-            u8g.drawStr(10, 45, "Unknown Error!");
+            u8g.drawStr(10, 40, "COM_RES:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "System Error!");
         break;
-    }
-
+          }
+	  } while( u8g.nextPage() );
     // 更改显示信息标志
     _isDisplaying = true;
 
@@ -878,8 +1005,6 @@ void Display::displayComMSG(const RESPONSE_MSG msg) {
 
     displayClear();
 
-    // 更改显示信息标志
-    _isDisplaying = false;
 }
 
 /**
@@ -889,8 +1014,10 @@ void Display::displayComMSG(const RESPONSE_MSG msg) {
  * @param  balance  可用余额
  * @param  duration 用车时长
  */
-void Display::displayDetails(const RESPONSE_MSG msg, const char* userID, const char* balance, const char* duration) {
-    switch(msg) {
+void Display::displayDetails(const RESPONSE_MSG msg, const char* userID, const char* balance, const char* duration) {  
+	u8g.firstPage();
+	do {
+		switch(msg) {
         case RENT_SUCCESS:
             u8g.setFont(u8g_font_unifont);
             u8g.drawStr( 0, 20, "ID:");
@@ -914,7 +1041,8 @@ void Display::displayDetails(const RESPONSE_MSG msg, const char* userID, const c
         break;
         default:
         break;
-    }
+       }
+     } while( u8g.nextPage() );
 
     // 更改显示信息标志
     _isDisplaying = true;
@@ -923,17 +1051,131 @@ void Display::displayDetails(const RESPONSE_MSG msg, const char* userID, const c
 
     displayClear();
 
-    // 更改显示信息标志
-    _isDisplaying = false;
 }
+
+
+
 
 /**
  * 显示读卡消息
  * @param msg 读卡消息
  */
 void Display::displayCardMSG(const CARD_MSG msg) {
-    u8g.setPrintPos(20, 20);
-    u8g.print(msg);
+	u8g.firstPage();
+	do {
+    switch(msg) {
+        case NOTHING:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(0, 0, "");
+        break;
+        case NEW_CARD_DETECTED:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            displayWait();
+        break;
+        case NEW_CARD_CONFIRMED:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(0, 0, "");
+        break;
+		case SAME_CARD_AGAIN:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(0, 0, "");
+        break;
+		case CARD_DETATCHED:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(0, 0, "");
+        break;
+		case CARD_DETATCH_CONFIRMED:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "Returning...");
+        break;
+		case CARD_READ_STOP:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "No Card Found");
+			u8g.drawStr(10, 45, "Try Again");
+        break;
+		case ERROR_DIFFERENT_CARD:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Error!");
+			u8g.drawStr(10, 45, "Try Another One");
+        break;
+		case ERROR_NOT_AVAILABLE_CARD:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Rent Fail!");
+			u8g.drawStr(10, 45, "Bike Broken");
+        break;
+		case ERROR_OTHER_CARD:
+			if(isDebug)
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 40, "CARD:");
+            u8g.setPrintPos(80,40);
+            u8g.print(msg);
+			else
+            u8g.setFont(u8g_font_unifont);
+            u8g.drawStr(10, 30, "Error!");
+			u8g.drawStr(10, 45, "Try Another One");
+        break;
+        default:
+        break;
+    }
+  } while( u8g.nextPage() );
+	 _isDisplaying = true;
+
+    delay(DURATION_LONG);
+
+    displayClear();
 }
 
 // private:
