@@ -78,46 +78,46 @@ CARD_MSG Card::searchCard(RENT_STATE state) {
 
         if (state != NOT_AVAILABLE) {
             // 车辆可用
-        	switch (getState()) {
-        	    case CARD_NOT_FOUND:
-        	        addCounter();
-        	        changeState(CARD_READING);
-        	        return NEW_CARD_DETECTED;
-        	    break;
-        	    case CARD_READING:
-        	        addCounter();
-        	        if (getCounter() > MIN_CARD_READING) {
-        	            clearCounter();
-        	            changeState(CARD_FOUND);
-        	            if (cardSerNum != rfid.cardSerNum()) {
-        	                // 发现新卡
-        	                cardSerNum = rfid.cardSerNum();
-        	                return NEW_CARD_CONFIRMED;
-        	            } else {
-        	                // 同一张卡
-        	                return SAME_CARD_AGAIN;
-        	            }
-        	        }
-        	    break;
-        	    case CARD_FOUND:
-        	        // 判断卡片是否改变
-        	        if (cardSerNum != rfid.cardSerNum()) {
-        	            clearCounter();
-        	            changeState(CARD_READING);
-        	            cardSerNum = rfid.cardSerNum();
-        	            // 返回错误
-        	            return ERROR_DIFFERENT_CARD;
-        	        }
-        	    break;
-        	    case CARD_DETATCHING:
-        	        clearCounter();
-        	        addCounter();
-        	        changeState(CARD_READING);
-        	        return NEW_CARD_DETECTED;
-        	    break;
-        	    default:
-        	    break;
-        	}
+            switch (getState()) {
+                case CARD_NOT_FOUND:
+                    addCounter();
+                    changeState(CARD_READING);
+                    return NEW_CARD_DETECTED;
+                break;
+                case CARD_READING:
+                    addCounter();
+                    if (getCounter() > MIN_CARD_READING) {
+                        clearCounter();
+                        changeState(CARD_FOUND);
+                        if (cardSerNum != rfid.cardSerNum()) {
+                            // 发现新卡
+                            cardSerNum = rfid.cardSerNum();
+                            return NEW_CARD_CONFIRMED;
+                        } else {
+                            // 同一张卡
+                            return SAME_CARD_AGAIN;
+                        }
+                    }
+                break;
+                case CARD_FOUND:
+                    // 判断卡片是否改变
+                    if (cardSerNum != rfid.cardSerNum()) {
+                        clearCounter();
+                        changeState(CARD_READING);
+                        cardSerNum = rfid.cardSerNum();
+                        // 返回错误
+                        return ERROR_DIFFERENT_CARD;
+                    }
+                break;
+                case CARD_DETATCHING:
+                    clearCounter();
+                    addCounter();
+                    changeState(CARD_READING);
+                    return NEW_CARD_DETECTED;
+                break;
+                default:
+                break;
+            }
         } else {
             // 车辆不可用
             return ERROR_NOT_AVAILABLE_CARD;
@@ -218,72 +218,144 @@ inline void Card::clearCounter() {
 
 
 //////////////////////////////////////
-// -------- RoutineUpdate --------- //
+// -------- LocationUpdate -------- //
 //////////////////////////////////////
 /**
- * 定时反馈通讯操作工具构造函数
+ * 定时定位操作工具构造函数
  */
-RoutineUpdate::RoutineUpdate() {
-    _lastUpdate = millis();
-    updatePaused = false;
+LocationUpdate::LocationUpdate() {
+    _lastUpdate = sysTime();
+    _updatePaused = false;
+
+    // 默认定位信息
+    _latitude = 1000;
+    _longitude = 1000;
 }
 
 // public:
 /**
- * 获取上次反馈定位及电量时间
- * @return 上次反馈定位及电量时间
+ * 获取上次定位时间
+ * @return 上次定位时间
  */
-unsigned long RoutineUpdate::getLastUpdate() {
-
+unsigned long LocationUpdate::getLastUpdate() {
+    return _lastUpdate;
 }
 
 /**
- * 检查是否需要进行定位和检查电量（依现在借车状态而定）
+ * 检查是否需要进行定位（依现在借车状态而定）
  * @return true - 需要; false - 不需要
  */
-bool RoutineUpdate::needUpdate() {
-    // 注意：millis()函数每50天会溢出清零
-    //       检查updatePaused
+bool LocationUpdate::needUpdate(const RENT_STATE state) {
+
+    // 检查更新是否被暂停
+    if (_updatePaused) {
+        return false;
+    }
+
+    // 检查车辆状态
+    switch (state) {
+        case RENT:
+            if (!withinInterval(_lastUpdate, sysTime(), UPDATE_INTERVAL_RENT)) {
+                // 与上次更新相差时间足够
+                return true;
+            }
+        break;
+        case NOT_RENT:
+            if (!withinInterval(_lastUpdate, sysTime(), UPDATE_INTERVAL_NOT_RENT)) {
+                // 与上次更新相差时间足够
+                return true;
+            }
+        break;
+        case NOT_AVAILABLE:
+            if (!withinInterval(_lastUpdate, sysTime(), UPDATE_INTERVAL_NOT_AVAILABLE)) {
+                // 与上次更新相差时间足够
+                return true;
+            }
+        break;
+        default:
+        break;
+    }
+
+    return false;
 }
 
 /**
  * 暂停定位和检查电量操作
  */
-void RoutineUpdate::pauseUpdate() {
-    updatePaused = true;
+void LocationUpdate::pauseUpdate() {
+    Log(TAG_LOCATION, "Location Update Paused");
+    _updatePaused = true;
 }
 
 /**
  * 恢复定位和检查电量操作
  */
-void RoutineUpdate::resumeUpdate() {
-    updatePaused = false;
+void LocationUpdate::resumeUpdate() {
+    Log(TAG_LOCATION, "Location Update Resumed");
+    _updatePaused = false;
 }
 
 /**
  * 定位和检查电量操作 成功后更新时间
  * @return 预留
  */
-int RoutineUpdate::doUpdate() {
-    // 注意：成功后更新_lastUpdate
-    //       返回值为预留信息 较多时请改为enum
+bool LocationUpdate::doUpdate() {
+    
+    // 重置定位信息
+    resetLocation();
+
+    bool locateSuccess = false;
+
+    // 打开GPS
+    locateSuccess = sim808.attachGPS();
+    if (locateSuccess) {
+        // 获取初始时间
+        unsigned long startGPS = sysTime();
+        locateSuccess = false;
+
+        // 如果定位未超时
+        while(withinInterval(startGPS, sysTime(), GPS_OVERTIME)) {
+            // 是否接收到GPS数据
+            if (sim808.getGPS()) {
+                _latitude = sim808.GPSdata.lat;
+                _longitude = sim808.GPSdata.lon;
+                locateSuccess = true;
+                break;
+            }
+        }
+    }
+
+    // 关闭GPS
+    sim808.detachGPS();
+    // 更新时间
+    _lastUpdate = sysTime();
+
+    return locateSuccess;
 }
 
 /**
- * 重置工具
+ * 重置定位信息（定位前重置）
  */
-void RoutineUpdate::reset() {
-    // 预留
+void LocationUpdate::resetLocation() {
+    _lastUpdate = millis();
+    _updatePaused = false;
+
+    // 重置定位信息
+    _latitude = 1000;
+    _longitude = 1000;
+}
+
+/**
+ * 重置工具（全部重置 谨慎使用）
+ */
+void LocationUpdate::reset() {
+
+    // 重置定位信息
+    _latitude = 1000;
+    _longitude = 1000;
 }
 
 // private:
-/**
- * 更新反馈定位及电量时间
- * @param newUpdate 新一次反馈定位及电量时间
- */
-void RoutineUpdate::setLastUpdate(const unsigned long newUpdate) {
-
-}
 
 
 //////////////////////////////////////
@@ -709,6 +781,7 @@ bool HTTPCom::decodeResponse(String response) {
             case RETURN_FAIL_USER_NOT_MATCH:
             case RETURN_FAIL_ORDER_NONEXISTENT:
             case LOCATION_SUCCESS:
+            case LOCATION_SUCCESS_NOT_AVAILABLE:
             case LOCATION_FAIL:
             case LOWBATTERY_SUCCESS:
             case LOWBATTERY_FAIL:
@@ -767,26 +840,36 @@ bool Display::isDisplaying() {
  * 显示等待信息
  */
 void Display::displayWait() {
-	u8g.firstPage(); 
-	do {
-    u8g.setFont(u8g_font_unifont);
-    u8g.drawStr( 10, 40, "Please Wait...");
-	} while( u8g.nextPage() );
     // 更改显示信息标志
     _isDisplaying = true;
+
+    // 显示内容
+    u8g.firstPage(); 
+    do {
+        // 设置字体
+        u8g.setFont(u8g_font_unifont);
+        // 选择信息
+        u8g.drawStr(LEFT_INDENT, 40, "Please Wait...");
+    } while(u8g.nextPage());
 }
 
 /**
  * 清空显示信息
  */
 void Display::displayClear() {
-	u8g.firstPage(); 
+    // 显示内容
+    u8g.firstPage(); 
     do {
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(0, 0, "");
-        } while( u8g.nextPage() );
-	delay(DURATION_short);
+        // 设置字体
+        u8g.setFont(u8g_font_unifont);
+        // 选择信息
+        u8g.drawStr(0, 0, "");
+    } while(u8g.nextPage());
+
+    // 更改显示信息标志
     _isDisplaying = false;
+
+    delay(DURATION_SHORT);
 }
 
 /**
@@ -794,217 +877,211 @@ void Display::displayClear() {
  * @param msg 通讯信息层回复编码
  */
 void Display::displayComMSG(const RESPONSE_MSG msg) {
-	u8g.firstPage();
-	do {
-    switch(msg) {
-		case RESPONSE_NULL:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-		    u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(0, 0, "");
-        break;
-        case RENT_SUCCESS:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-		    u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "Rent Succeed!");
-        break;
-        case RENT_FAIL_USER_OCCUPIED:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Rent Fail!");
-            u8g.drawStr(10, 45, "System Error");
-        break;
-        case RENT_FAIL_USER_NONEXISTENT:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Rent Fail!");
-            u8g.drawStr(10, 45, "System Error");
-        break;
-        case RENT_FAIL_NEGATIVE_BALANCE:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Rent Fail!");
-            u8g.drawStr(10, 45, "No Balance");
-        break;
-        case RENT_FAIL_BIKE_OCCUPIED:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Rent Fail!");
-            u8g.drawStr(10, 45, "Bike Occupied");
-        break;
-        case RENT_FAIL_BIKE_UNAVAILABLE:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Rent Fail!");
-            u8g.drawStr(10, 45, "Bike Broken");
-        break;
-        case RETURN_SUCCESS:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-		    u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "Return Success!");
-        break;
-        case RETURN_FAIL_USER_NOT_MATCH:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Return Fail!");
-            u8g.drawStr(10, 45, "System Error");
-        break;
-        case RETURN_FAIL_ORDER_NONEXISTENT:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Return Fail!");
-            u8g.drawStr(10, 45, "System Error");
-        break;
-        case LOCATION_SUCCESS:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "");
-        break;
-        case LOCATION_FAIL:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "");
-        break;
-        case LOWBATTERY_SUCCESS:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "");
-        break;
-        case LOWBATTERY_FAIL:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "");
-        break;
-        case ERROR_REQUEST_OVERTIME:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "No Network");
-            u8g.drawStr(10, 45, "Try Again!");
-        break;
-        case ERROR_STATUS:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "System Error!");
-		break;
-        case ERROR_INVALID_RESPONSE:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "System Error!");
-		break;
-        case ERROR_DECODE:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "System Error!");
-		break;
-        case ERROR_OTHER:
-        default:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "COM_RES:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "System Error!");
-        break;
-          }
-	  } while( u8g.nextPage() );
     // 更改显示信息标志
     _isDisplaying = true;
 
-    delay(DURATION);
+    // 显示内容
+    u8g.firstPage();
+    do {
+        // 设置字体
+        u8g.setFont(u8g_font_unifont);
 
-    displayClear();
+        // 选择信息
+        switch(msg) {
+            case RESPONSE_NULL:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case RENT_SUCCESS:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, "Rent Succeed!");
+                }
+            break;
+            case RENT_FAIL_USER_OCCUPIED:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, 45, "System Error");
+                }
+            break;
+            case RENT_FAIL_USER_NONEXISTENT:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, 45, "System Error");
+                }
+            break;
+            case RENT_FAIL_NEGATIVE_BALANCE:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, 45, "No Balance");
+                }
+            break;
+            case RENT_FAIL_BIKE_OCCUPIED:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, 45, "Bike Occupied");
+                }
+            break;
+            case RENT_FAIL_BIKE_UNAVAILABLE:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, 45, "Bike Broken");
+                }
+            break;
+            case RETURN_SUCCESS:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, "Return Success!");
+                }
+            break;
+            case RETURN_FAIL_USER_NOT_MATCH:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "Return Fail!");
+                    u8g.drawStr(LEFT_INDENT, 45, "System Error");
+                }
+            break;
+            case RETURN_FAIL_ORDER_NONEXISTENT:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "Return Fail!");
+                    u8g.drawStr(LEFT_INDENT, 45, "System Error");
+                }
+            break;
+            case LOCATION_SUCCESS:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case LOCATION_FAIL:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case LOWBATTERY_SUCCESS:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case LOWBATTERY_FAIL:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case ERROR_REQUEST_OVERTIME:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "No Network");
+                    u8g.drawStr(LEFT_INDENT, 45, "Try Again!");
+                }
+            break;
+            case ERROR_STATUS:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                }
+            break;
+            case ERROR_INVALID_RESPONSE:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+            break;
+            case ERROR_DECODE:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                }
+            break;
+            case ERROR_OTHER:
+            default:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                }
+            break;
+        }
+    } while(u8g.nextPage());
 
+    if (isDisplaying()) {
+        // 信息显示时间
+        delay(DURATION);
+
+        // 清除显示信息
+        displayClear();
+    }
 }
 
 /**
@@ -1015,40 +1092,51 @@ void Display::displayComMSG(const RESPONSE_MSG msg) {
  * @param  duration 用车时长
  */
 void Display::displayDetails(const RESPONSE_MSG msg, const char* userID, const char* balance, const char* duration) {  
-	u8g.firstPage();
-	do {
-		switch(msg) {
-        case RENT_SUCCESS:
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr( 0, 20, "ID:");
-            u8g.setPrintPos(40,20);
-            u8g.print(userID);
-            u8g.drawStr( 0, 40, "Balance:");
-            u8g.setPrintPos(70,40);
-            u8g.print(balance);
-        break;
-        case RETURN_SUCCESS:
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(0, 20, "ID:");
-            u8g.setPrintPos(40,20);
-            u8g.print(userID);
-            u8g.drawStr(0, 40, "Balance:");
-            u8g.setPrintPos(70,40);
-            u8g.print(balance);
-            u8g.drawStr(0, 60, "Duration:");
-            u8g.setPrintPos(70, 60);
-            u8g.print(duration);
-        break;
-        default:
-        break;
-       }
-     } while( u8g.nextPage() );
-
     // 更改显示信息标志
     _isDisplaying = true;
 
+    // 显示内容
+    u8g.firstPage();
+    do {
+        // 设置字体
+        u8g.setFont(u8g_font_unifont);
+
+        // 选择信息
+        switch(msg) {
+            case RENT_SUCCESS:
+                u8g.drawStr( 0, 20, "ID:");
+                u8g.setPrintPos(40, 20);
+                u8g.print(userID);
+                u8g.drawStr( 0, 40, "Balance:");
+                u8g.setPrintPos(70, 40);
+                u8g.print(balance);
+            break;
+            case RETURN_SUCCESS:
+                u8g.drawStr(0, 20, "ID:");
+                u8g.setPrintPos(40, 20);
+                u8g.print(userID);
+                u8g.drawStr(0, 40, "Balance:");
+                u8g.setPrintPos(70, 40);
+                u8g.print(balance);
+                u8g.drawStr(0, 60, "Duration:");
+                u8g.setPrintPos(70, 60);
+                u8g.print(duration);
+            break;
+            default:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 30, TAG_COM_DETAILS + ":");
+                    u8g.drawStr(LEFT_INDENT, 45, MSG_ERROR);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                }
+            break;
+        }
+    } while(u8g.nextPage());
+
+    // 信息显示时间
     delay(DURATION_LONG);
 
+    // 清除显示信息
     displayClear();
 
 }
@@ -1061,121 +1149,133 @@ void Display::displayDetails(const RESPONSE_MSG msg, const char* userID, const c
  * @param msg 读卡消息
  */
 void Display::displayCardMSG(const CARD_MSG msg) {
-	u8g.firstPage();
-	do {
-    switch(msg) {
-        case NOTHING:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(0, 0, "");
-        break;
-        case NEW_CARD_DETECTED:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            displayWait();
-        break;
-        case NEW_CARD_CONFIRMED:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(0, 0, "");
-        break;
-		case SAME_CARD_AGAIN:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(0, 0, "");
-        break;
-		case CARD_DETATCHED:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(0, 0, "");
-        break;
-		case CARD_DETATCH_CONFIRMED:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "Returning...");
-        break;
-		case CARD_READ_STOP:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "No Card Found");
-			u8g.drawStr(10, 45, "Try Again");
-        break;
-		case ERROR_DIFFERENT_CARD:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Error!");
-			u8g.drawStr(10, 45, "Try Another One");
-        break;
-		case ERROR_NOT_AVAILABLE_CARD:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Rent Fail!");
-			u8g.drawStr(10, 45, "Bike Broken");
-        break;
-		case ERROR_OTHER_CARD:
-			if(isDebug)
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 40, "CARD:");
-            u8g.setPrintPos(80,40);
-            u8g.print(msg);
-			else
-            u8g.setFont(u8g_font_unifont);
-            u8g.drawStr(10, 30, "Error!");
-			u8g.drawStr(10, 45, "Try Another One");
-        break;
-        default:
-        break;
+    // 更改显示信息标志
+    _isDisplaying = true;
+
+    // 显示内容
+    u8g.firstPage();
+    do {
+        // 设置字体
+        u8g.setFont(u8g_font_unifont);
+
+        // 选择信息
+        switch(msg) {
+            case NOTHING:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case NEW_CARD_DETECTED:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    displayWait();
+                }
+            break;
+            case NEW_CARD_CONFIRMED:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case SAME_CARD_AGAIN:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case CARD_DETATCHED:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(0, 0, "");
+                    _isDisplaying = false;
+                }
+            break;
+            case CARD_DETATCH_CONFIRMED:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, "Returning...");
+                }
+            break;
+            case CARD_READ_STOP:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "No Card Found");
+                    u8g.drawStr(LEFT_INDENT, 45, "Try Again!");
+                }
+            break;
+            case ERROR_DIFFERENT_CARD:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, 45, "Try Another One");
+                }
+            break;
+            case ERROR_NOT_AVAILABLE_CARD:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, 45, "Bike Broken");
+                }
+            break;
+            case ERROR_OTHER_CARD:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
+                    u8g.setPrintPos(80, 40);
+                    u8g.print(msg);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 30, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, 45, "Try Another One");
+                }
+            break;
+            default:
+                if (isDebug) {
+                    u8g.drawStr(LEFT_INDENT, 30, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, 45, MSG_ERROR);
+                } else {
+                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                }
+            break;
+        }
+    } while(u8g.nextPage());
+
+    if (isDisplaying()) {
+        // 信息显示时间
+        delay(DURATION);
+
+        // 清除显示信息
+        displayClear();
     }
-  } while( u8g.nextPage() );
-	 _isDisplaying = true;
-
-    delay(DURATION_LONG);
-
-    displayClear();
 }
 
 // private:
@@ -1207,7 +1307,7 @@ void Lock::unlock() {
 //////////////////////////////////////
 RentState        RENTSTATE;
 Card             CARD;
-RoutineUpdate    UPDATE;
+LocationUpdate   LOCATION;
 HTTPCom          HTTPCOM;
 Display          DISPLAYS;
 Lock             LOCK;
@@ -1216,11 +1316,55 @@ Lock             LOCK;
 // ----------- 全局函数 ----------- //
 //////////////////////////////////////
 /**
+ * 获取系统时间（可能溢出）
+ * @return 系统时间
+ */
+unsigned long sysTime() {
+    return millis();
+}
+
+/**
+ * 判断两个时间点之间是否满足间隔（考虑溢出）
+ * @param  start    开始时间
+ * @param  end      结束时间
+ * @param  interval 间隔时间
+ * @return          true - 在间隔内
+ *                  false - 不在间隔内 / 时间溢出
+ */
+inline bool withinInternal(const unsigned long start, const unsigned long end, const unsigned long interval) {
+    // 时间溢出
+    if (end < start) {
+        return false;
+    }
+
+    // 判断间隔
+    if (end - start < interval) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+/**
+ * 获取电池电量
+ * @return 电池电量（小数点后保留两位）
+ *         （0.00 ~ 1.00 读取错误时返回 -1.00）
+ */
+float readBatteryLevel() {
+    // 读取电量
+    
+    // 读取失败
+    return -1.00;
+}
+
+
+/**
  * 记录日志
  * @param tag 日志标签
  * @param log 日志信息
  */
-void Log(String tag, String log) {
+void Log(const String tag, const String log) {
     if (isDebug) {
         Serial.println(tag + ":");
         Serial.println(log);
@@ -1230,36 +1374,36 @@ void Log(String tag, String log) {
  * 记录日志
  * @param log 日志信息
  */
-void Log(String log) {
+void Log(const String log) {
     Log("LOG", log);
 }
 /**
  * 记录日志
  * @param log 日志信息
  */
-void Log(RESPONSE_MSG log) {
-    Log("RESPONSE_MSG", String((int) log));
+void Log(const RESPONSE_MSG log) {
+    Log(TAG_COM_MSG, String((int) log));
 }
 /**
  * 记录日志
  * @param log 日志信息
  */
-void Log(CARD_MSG log) {
-    Log("CARD_MSG", String((int) log));
+void Log(const CARD_MSG log) {
+    Log(TAG_CARD_MSG, String((int) log));
 }
 /**
  * 记录日志
  * @param log 日志信息
  */
-void Log(RENT_STATE log) {
-    Log("RENT_STATE", String((int) log));
+void Log(const RENT_STATE log) {
+    Log(TAG_RENTSTATE, String((int) log));
 }
 
 /**
  * 记录错误
  * @param error 错误信息
  */
-void Error(RENT_STATE error) {
+void Error(const String error) {
     if (isDebug) {
         Serial.println("");
         Serial.println("********************");
@@ -1276,8 +1420,6 @@ void Error(RENT_STATE error) {
  */
 bool setupInit() {
     delay(1000);
-    Serial.begin(9600);
-    SPI.begin();
     rfid.init();
     return sim808.init();
 }

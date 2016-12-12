@@ -10,6 +10,25 @@
 // 调试标志
 static bool isDebug = true;
 
+// 模块日志标签
+const String TAG_SETUP = "SETUP";
+const String TAG_LOOP = "LOOP";
+
+const String TAG_RENTSTATE = "RENT_STATE";
+
+const String TAG_CARD = "CARD";
+const String TAG_CARD_MSG = "CARD_MSG";
+
+const String TAG_LOCATION = "LOCATION";
+
+const String TAG_COM = "COM";
+const String TAG_COM_MSG = "RESPONSE_MSG";
+const String TAG_COM_RES = "COM_RES";
+const String TAG_COM_DETAILS = "COM_DETAILS";
+
+const String TAG_LOCK = "LOCK";
+
+
 //////////////////////////////////////
 // --------- 调用工具实例 --------- //
 //////////////////////////////////////
@@ -49,8 +68,8 @@ enum CARD_MSG {
     CARD_DETATCH_CONFIRMED,         // 确认卡片已取走
     CARD_READ_STOP,                 // 卡片读取中断
     ERROR_DIFFERENT_CARD,           // 错误：探测到不同卡片
-    ERROR_NOT_AVAILABLE_CARD,            // 错误：车辆不可用
-    ERROR_OTHER_CARD,                    // 错误：预留
+    ERROR_NOT_AVAILABLE_CARD,       // 错误：车辆不可用
+    ERROR_OTHER_CARD,               // 错误：预留
 };
 
 // 通讯请求编码
@@ -77,7 +96,8 @@ enum RESPONSE_MSG {
     RETURN_FAIL_USER_NOT_MATCH      = 220,  // 还车失败：用户信息冲突
     RETURN_FAIL_ORDER_NONEXISTENT   = 230,  // 还车失败：车辆未借出
     LOCATION_SUCCESS                = 310,  // 定位信息发送成功
-    LOCATION_FAIL                   = 320,  // 定位信息发送失败：预留
+    LOCATION_SUCCESS_NOT_AVAILABLE  = 320,  // 定位信息发送成功 车辆不可用
+    LOCATION_FAIL                   = 330,  // 定位信息发送失败
     LOWBATTERY_SUCCESS              = 410,  // 低电量信息发送成功
     LOWBATTERY_FAIL                 = 420,  // 低电量信息发送失败：预留
     ERROR_OTHER                     = 100,  // 错误：服务器其它错误
@@ -144,25 +164,55 @@ class Card {
 
 
 /**
- * 定时反馈通讯操作工具
+ * 定时定位操作工具
+ * 使用流程：确定需要定位 -> 需要：进行定位 -> 成功：获取经纬度
+ *           needUpdate      true: doUpdate    true: getLattitude / getLongitude
+ *                                          -> 失败：无操作
+ *                                             false
+ *                        -> 不需要：无操作
+ *                           false
  */
-class RoutineUpdate {
+class LocationUpdate {
     public:
-        RoutineUpdate();
+        LocationUpdate();
 
         unsigned long getLastUpdate();
-        bool needUpdate();
+        bool needUpdate(const RENT_STATE state);
         void pauseUpdate();
         void resumeUpdate();
-        int doUpdate();
+        bool doUpdate();
+
+        float getLatitude();
+        float getLongitude();
+
+        void resetLocation();
 
         void reset();
 
     private:
-        unsigned long _lastUpdate;
-        bool updatePaused;
 
-        void setLastUpdate(const unsigned long newUpdate);
+        // 指令间间隔时间
+        const unsigned long INTERVAL_SHORT = 200;
+        const unsigned long INTERVAL_LONG = 1000;
+
+        // 定位时限
+        const unsigned long UPDATE_INTERVAL_RENT_IN_MIN = 1;            // min
+        const unsigned long UPDATE_INTERVAL_NOT_RENT_IN_MIN = 10;       // min
+        const unsigned long UPDATE_INTERVAL_NOT_AVAILABLE_IN_MIN = 5;   // min
+
+        const unsigned long UPDATE_INTERVAL_RENT = UPDATE_INTERVAL_RENT_IN_MIN * 60 * 1000;                     // ms
+        const unsigned long UPDATE_INTERVAL_NOT_RENT = UPDATE_INTERVAL_NOT_RENT_IN_MIN * 60 * 1000;             // ms
+        const unsigned long UPDATE_INTERVAL_NOT_AVAILABLE = UPDATE_INTERVAL_NOT_AVAILABLE_IN_MIN * 60 * 1000;   // ms
+
+        const unsigned long GPS_OVERTIME = 30000;   // ms
+
+        unsigned long _lastUpdate;
+        bool _updatePaused;
+        
+        // 定位信息 默认值：1000
+        float _latitude;
+        float _longitude;
+
 };
 
 
@@ -203,6 +253,7 @@ class HTTPCom {
         String _duration;
         String _request;
 
+        // 指令间间隔时间
         const unsigned long INTERVAL_SHORT = 200;
         const unsigned long INTERVAL_LONG = 1000;
 
@@ -250,9 +301,14 @@ class Display {
 
     private:
         bool _isDisplaying;
-		const unsigned long DURATION_short = 50;
+
+		const unsigned long DURATION_SHORT = 50;
         const unsigned long DURATION = 5000;
         const unsigned long DURATION_LONG = 10000;
+
+        const String MSG_ERROR = "System Error!";
+
+        const int LEFT_INDENT = 10;
 };
 
 
@@ -266,7 +322,7 @@ class Lock {
         void unlock();
 
     private:
-        const unsigned long DURATION = 10000;
+        const unsigned long DURATION = 5000;
 };
 
 
@@ -275,7 +331,7 @@ class Lock {
 //////////////////////////////////////
 extern RentState        RENTSTATE;
 extern Card             CARD;
-extern RoutineUpdate    UPDATE;
+extern LocationUpdate   LOCATION;
 extern HTTPCom          HTTPCOM;
 extern Display          DISPLAYS;
 extern Lock             LOCK;
@@ -284,15 +340,26 @@ extern Lock             LOCK;
 // ----------- 全局函数 ----------- //
 //////////////////////////////////////
 /**
+ * 时间工具
+ */
+unsigned long sysTime();
+inline bool withinInternal(const unsigned long start, const unsigned long end, const unsigned long interval);
+
+/**
+ * 电池电量工具
+ */
+float readBatteryLevel();
+
+/**
  * 记录日志
  */
-void Log(String tag, String log);
-void Log(String log);
-void Log(RESPONSE_MSG log);
-void Log(CARD_MSG log);
-void Log(RENT_STATE log);
+void Log(const String tag, const String log);
+void Log(const String log);
+void Log(const RESPONSE_MSG log);
+void Log(const CARD_MSG log);
+void Log(const RENT_STATE log);
 
-void Error(String error);
+void Error(const String error);
 
 /**
  * 系统初始化
