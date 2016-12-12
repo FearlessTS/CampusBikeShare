@@ -1,2 +1,2 @@
 # CampusBikeShare
-Campus bike sharing Arduino application.
+Arduino code for campus sharing bikes.
