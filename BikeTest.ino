@@ -36,7 +36,7 @@ void loop() {
     Log(TAG_LOOP, "battery Level Read!");
 
     // 检查电量是否过低
-    if (batteryLevel <= LOW_BATTERY_THRESHOLD && RENTSTATE.getState != RENT) {
+    if (batteryLevel <= LOW_BATTERY_THRESHOLD && RENTSTATE.getState() != RENT) {
 
         // 车辆状态：不可用
         RENTSTATE.changeState(NOT_AVAILABLE);
@@ -103,9 +103,9 @@ void loop() {
         // 发送信息
         bool requestUpdateSuccess;
         if (updateSuccess) {
-            requestUpdateSuccess = HTTPCom.requestLoction(BIKEID, LOCATION.getLongitude, LOCATION.getLatitude, batteryLevel);
+            requestUpdateSuccess = HTTPCOM.requestLoction(BIKEID, LOCATION.getLongitude(), LOCATION.getLatitude(), batteryLevel);
         } else {
-            requestUpdateSuccess = HTTPCom.requestLoctionFail(BIKEID, batteryLevel);
+            requestUpdateSuccess = HTTPCOM.requestLoctionFail(BIKEID, batteryLevel);
         }
 
         // 检查回复
@@ -228,7 +228,7 @@ void loop() {
 
                             case RENT_FAIL_BIKE_OCCUPIED:
                             // 借车失败：车辆被其他用户占用
-                            Error(TAG_COM_RES, "Rent Fail! Bike Occupied");
+                            Error(TAG_COM_RES + ": Rent Fail! Bike Occupied");
                             // 待查
                             
                                 // 车辆状态：不可用

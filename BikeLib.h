@@ -306,9 +306,28 @@ class Display {
         const unsigned long DURATION = 5000;
         const unsigned long DURATION_LONG = 10000;
 
-        const String MSG_ERROR = "System Error!";
+        const char* CHAR_COM = (TAG_COM + ":").c_str();
+        const char* CHAR_COM_RES = (TAG_COM_RES + ":").c_str();
+        const char* CHAR_COM_DETAILS = (TAG_COM_DETAILS + ":").c_str();
 
+        const char* CHAR_MSG_ERROR = "System Error!";
+
+        // x坐标取值
+        const int LEFT_EDGE = 0;
         const int LEFT_INDENT = 10;
+        const int LEFT_TAB_1 = 40;
+        const int LEFT_TAB_2 = 80;
+
+        const int LEFT_TAB_USERID = 70;
+
+        // y坐标取值
+        const int TOP_EDGE = 0;
+        const int LINE_1_OF_1 = 40;
+        const int LINE_1_OF_2 = 30;
+        const int LINE_2_OF_2 = 45;
+        const int LINE_1_OF_3 = 20;
+        const int LINE_2_OF_3 = 40;
+        const int LINE_3_OF_3 = 60;
 };
 
 
@@ -343,7 +362,7 @@ extern Lock             LOCK;
  * 时间工具
  */
 unsigned long sysTime();
-inline bool withinInternal(const unsigned long start, const unsigned long end, const unsigned long interval);
+inline bool withinInterval(const unsigned long start, const unsigned long end, const unsigned long interval);
 
 /**
  * 电池电量工具

@@ -849,7 +849,7 @@ void Display::displayWait() {
         // 设置字体
         u8g.setFont(u8g_font_unifont);
         // 选择信息
-        u8g.drawStr(LEFT_INDENT, 40, "Please Wait...");
+        u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, "Please Wait...");
     } while(u8g.nextPage());
 }
 
@@ -863,7 +863,7 @@ void Display::displayClear() {
         // 设置字体
         u8g.setFont(u8g_font_unifont);
         // 选择信息
-        u8g.drawStr(0, 0, "");
+        u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
     } while(u8g.nextPage());
 
     // 更改显示信息标志
@@ -890,186 +890,186 @@ void Display::displayComMSG(const RESPONSE_MSG msg) {
         switch(msg) {
             case RESPONSE_NULL:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case RENT_SUCCESS:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, "Rent Succeed!");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, "Rent Succeed!");
                 }
             break;
             case RENT_FAIL_USER_OCCUPIED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
-                    u8g.drawStr(LEFT_INDENT, 45, "System Error");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "System Error");
                 }
             break;
             case RENT_FAIL_USER_NONEXISTENT:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
-                    u8g.drawStr(LEFT_INDENT, 45, "System Error");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "System Error");
                 }
             break;
             case RENT_FAIL_NEGATIVE_BALANCE:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
-                    u8g.drawStr(LEFT_INDENT, 45, "No Balance");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "No Balance");
                 }
             break;
             case RENT_FAIL_BIKE_OCCUPIED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
-                    u8g.drawStr(LEFT_INDENT, 45, "Bike Occupied");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "Bike Occupied");
                 }
             break;
             case RENT_FAIL_BIKE_UNAVAILABLE:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
-                    u8g.drawStr(LEFT_INDENT, 45, "Bike Broken");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "Bike Broken");
                 }
             break;
             case RETURN_SUCCESS:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, "Return Success!");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, "Return Success!");
                 }
             break;
             case RETURN_FAIL_USER_NOT_MATCH:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "Return Fail!");
-                    u8g.drawStr(LEFT_INDENT, 45, "System Error");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "Return Fail!");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "System Error");
                 }
             break;
             case RETURN_FAIL_ORDER_NONEXISTENT:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "Return Fail!");
-                    u8g.drawStr(LEFT_INDENT, 45, "System Error");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "Return Fail!");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "System Error");
                 }
             break;
             case LOCATION_SUCCESS:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case LOCATION_FAIL:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case LOWBATTERY_SUCCESS:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case LOWBATTERY_FAIL:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case ERROR_REQUEST_OVERTIME:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "No Network");
-                    u8g.drawStr(LEFT_INDENT, 45, "Try Again!");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "No Network");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "Try Again!");
                 }
             break;
             case ERROR_STATUS:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_MSG_ERROR);
                 }
             break;
             case ERROR_INVALID_RESPONSE:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_MSG_ERROR);
             break;
             case ERROR_DECODE:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_MSG_ERROR);
                 }
             break;
             case ERROR_OTHER:
             default:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_COM_RES + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_RES);
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_MSG_ERROR);
                 }
             break;
         }
@@ -1104,30 +1104,30 @@ void Display::displayDetails(const RESPONSE_MSG msg, const char* userID, const c
         // 选择信息
         switch(msg) {
             case RENT_SUCCESS:
-                u8g.drawStr( 0, 20, "ID:");
-                u8g.setPrintPos(40, 20);
+                u8g.drawStr(LEFT_EDGE, LINE_1_OF_3, "ID:");
+                u8g.setPrintPos(LEFT_TAB_1, LINE_1_OF_3);
                 u8g.print(userID);
-                u8g.drawStr( 0, 40, "Balance:");
-                u8g.setPrintPos(70, 40);
+                u8g.drawStr(LEFT_EDGE, LINE_2_OF_3, "Balance:");
+                u8g.setPrintPos(LEFT_TAB_USERID, LINE_2_OF_3);
                 u8g.print(balance);
             break;
             case RETURN_SUCCESS:
-                u8g.drawStr(0, 20, "ID:");
-                u8g.setPrintPos(40, 20);
+                u8g.drawStr(LEFT_EDGE, LINE_1_OF_3, "ID:");
+                u8g.setPrintPos(LEFT_TAB_1, LINE_1_OF_3);
                 u8g.print(userID);
-                u8g.drawStr(0, 40, "Balance:");
-                u8g.setPrintPos(70, 40);
+                u8g.drawStr(LEFT_EDGE, LINE_2_OF_3, "Balance:");
+                u8g.setPrintPos(LEFT_TAB_USERID, LINE_2_OF_3);
                 u8g.print(balance);
-                u8g.drawStr(0, 60, "Duration:");
-                u8g.setPrintPos(70, 60);
+                u8g.drawStr(LEFT_EDGE, LINE_3_OF_3, "Duration:");
+                u8g.setPrintPos(LEFT_TAB_USERID, LINE_3_OF_3);
                 u8g.print(duration);
             break;
             default:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 30, TAG_COM_DETAILS + ":");
-                    u8g.drawStr(LEFT_INDENT, 45, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, CHAR_COM_DETAILS);
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, CHAR_MSG_ERROR);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_MSG_ERROR);
                 }
             break;
         }
@@ -1162,18 +1162,18 @@ void Display::displayCardMSG(const CARD_MSG msg) {
         switch(msg) {
             case NOTHING:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case NEW_CARD_DETECTED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
                     displayWait();
@@ -1181,89 +1181,89 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case NEW_CARD_CONFIRMED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case SAME_CARD_AGAIN:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case CARD_DETATCHED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(0, 0, "");
+                    u8g.drawStr(LEFT_EDGE, TOP_EDGE, "");
                     _isDisplaying = false;
                 }
             break;
             case CARD_DETATCH_CONFIRMED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, "Returning...");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, "Returning...");
                 }
             break;
             case CARD_READ_STOP:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "No Card Found");
-                    u8g.drawStr(LEFT_INDENT, 45, "Try Again!");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "No Card Found");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "Try Again!");
                 }
             break;
             case ERROR_DIFFERENT_CARD:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, MSG_ERROR);
-                    u8g.drawStr(LEFT_INDENT, 45, "Try Another One");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, CHAR_MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "Try Another One");
                 }
             break;
             case ERROR_NOT_AVAILABLE_CARD:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, "Rent Fail!");
-                    u8g.drawStr(LEFT_INDENT, 45, "Bike Broken");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, "Rent Fail!");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "Bike Broken");
                 }
             break;
             case ERROR_OTHER_CARD:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 40, TAG_CARD + ":");
-                    u8g.setPrintPos(80, 40);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 30, MSG_ERROR);
-                    u8g.drawStr(LEFT_INDENT, 45, "Try Another One");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, CHAR_MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, "Try Another One");
                 }
             break;
             default:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, 30, TAG_CARD + ":");
-                    u8g.drawStr(LEFT_INDENT, 45, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, CHAR_MSG_ERROR);
                 } else {
-                    u8g.drawStr(LEFT_INDENT, 40, MSG_ERROR);
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_MSG_ERROR);
                 }
             break;
         }
@@ -1331,7 +1331,7 @@ unsigned long sysTime() {
  * @return          true - 在间隔内
  *                  false - 不在间隔内 / 时间溢出
  */
-inline bool withinInternal(const unsigned long start, const unsigned long end, const unsigned long interval) {
+inline bool withinInterval(const unsigned long start, const unsigned long end, const unsigned long interval) {
     // 时间溢出
     if (end < start) {
         return false;
