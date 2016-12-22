@@ -1,7 +1,7 @@
 #include "BikeLib.h"
 
 // 车辆编号
-const int BIKEID = 10000;
+const int BIKEID = 1;
 
 // 最大请求次数
 const int MAX_REQUEST_COUNT = 5;
@@ -11,7 +11,7 @@ const float LOW_BATTERY_THRESHOLD = 0.5;
 
 // 全局变量
 unsigned long serNum;
-float batteryLevel = -1.00;
+float batteryLevel = 1.00;
 
 
 // 初始化
@@ -37,6 +37,7 @@ void loop() {
 
     // 检查电量是否过低
     if (batteryLevel <= LOW_BATTERY_THRESHOLD && RENTSTATE.getState() != RENT) {
+      Log("Low Battery Level");// 删掉
 
         // 车辆状态：不可用
         RENTSTATE.changeState(NOT_AVAILABLE);
@@ -93,80 +94,88 @@ void loop() {
     }
     
     // 定位及反馈
-    if (LOCATION.needUpdate()) {
-        Log(TAG_LOCATION, "Location Updating...");
+   if (LOCATION.needUpdate(RENTSTATE.getState())) {
+       Log(TAG_LOCATION, "Location Updating...");
 
-        // 定位
-        bool updateSuccess = LOCATION.doUpdate();
-        Log(TAG_LOCATION, "Location Update Complete " + (int) updateSuccess);
+       // 定位
+       bool updateSuccess = LOCATION.doUpdate();
+       Log(TAG_LOCATION, "Location Update Complete " + (int) updateSuccess);
 
-        // 发送信息
-        bool requestUpdateSuccess;
-        if (updateSuccess) {
-            requestUpdateSuccess = HTTPCOM.requestLoction(BIKEID, LOCATION.getLongitude(), LOCATION.getLatitude(), batteryLevel);
-        } else {
-            requestUpdateSuccess = HTTPCOM.requestLoctionFail(BIKEID, batteryLevel);
-        }
+       // 发送信息
+       bool requestUpdateSuccess;
+       if (updateSuccess) {
+           requestUpdateSuccess = HTTPCOM.requestLocation(BIKEID, LOCATION.getLongitude(), LOCATION.getLatitude(), batteryLevel);
+       } else {
+           requestUpdateSuccess = HTTPCOM.requestLocationFail(BIKEID, batteryLevel);
+       }
 
-        // 检查回复
-        if (requestUpdateSuccess) {
-            if (HTTPCOM.hasResponse()) {
-                Log(TAG_LOCATION, "hasResponse");
+       // 检查回复
+       if (requestUpdateSuccess) {
+           if (HTTPCOM.hasResponse()) {
+               Log(TAG_LOCATION, "hasResponse");
 
-                switch (HTTPCOM.getResponse()) {
-                    case LOCATION_SUCCESS:
-                    // 定位信息发送成功
-                    Log(TAG_COM_RES, "Location Success!");
+               switch (HTTPCOM.getResponse()) {
+                   case LOCATION_SUCCESS:
+                   // 定位信息发送成功
+                   Log(TAG_COM_RES, "Location Success!");
 
-                        if (!RENTSTATE.isAvailable()) {
-                            // 车辆状态：未借用
-                            RENTSTATE.changeState(NOT_RENT);
-                        }
-                    break;
+                       if (!RENTSTATE.isAvailable()) {
+                           // 车辆状态：未借用
+                           RENTSTATE.changeState(NOT_RENT);
+                       }
+                   break;
 
-                    case LOCATION_SUCCESS_NOT_AVAILABLE:
-                    // 定位信息发送成功 车辆不可用
-                    Log(TAG_COM_RES, "Backend Reached! Bike Not Available");
-
-                        // 车辆状态：不可用
-                        RENTSTATE.changeState(NOT_AVAILABLE);
-                    break;
-
-                    case LOCATION_FAIL:
-                    // 定位信息发送失败
-                    Log(TAG_COM_RES, "Backend Error! Bike Not Available");
+                   case LOCATION_SUCCESS_NOT_AVAILABLE:
+                   // 定位信息发送成功 车辆不可用
+                   Log(TAG_COM_RES, "Backend Reached! Bike Not Available");
                         
-                        // 车辆状态：不可用
-                        RENTSTATE.changeState(NOT_AVAILABLE);
-                    break;
+                       // 骑行状态中车辆状态不应发生改变，否则无法还车
+                       if (RENTSTATE.getState() != RENT) {
+                           // 车辆状态：不可用
+                           RENTSTATE.changeState(NOT_AVAILABLE);
+                       }
+                   break;
 
-                    default:
-                    Error(TAG_COM_MSG + ": " + (int) HTTPCOM.getResponse());
-                    break;
-                }
-            } else {
-                Error(TAG_COM + ": hasResponse FALSE");
-            }
-        } else {
-            // 获取错误信息
-            switch (HTTPCOM.getError()) {
-                case ERROR_STATUS:              // 请求状态错误
-                case ERROR_REQUEST_OVERTIME:    // 请求超时
-                case ERROR_INVALID_RESPONSE:    // 接收信息无效
-                case ERROR_DECODE:              // 回复信息解码错误
-                Log(TAG_COM_RES, "Backend Not Reached! Bike Not Available");
-                Log(HTTPCOM.getResponse());
+                   case LOCATION_FAIL:
+                   // 定位信息发送失败
+                   Log(TAG_COM_RES, "Backend Error! Bike Not Available");
+                        
+/*                     定位失败不需要改变车辆状态，否则一旦定位失败车辆就再也无法使用  
+                       if (RENTSTATE.getState() != RENT) {
+                           // 车辆状态：不可用
+                           RENTSTATE.changeState(NOT_AVAILABLE);
+                       }*/
+                   break;
 
-                    // 车辆状态：不可用
-                    RENTSTATE.changeState(NOT_AVAILABLE);
-                break;
-                default:
-                Error(TAG_COM_RES + ": " + (int) HTTPCOM.getResponse());
-                break;
-            }
-        }
+                   default:
+                   Error(TAG_COM_MSG + ": " + (int) HTTPCOM.getResponse());
+                   break;
+               }
+           } else {
+               Error(TAG_COM + ": hasResponse FALSE");
+           }
+       } else {
+           // 获取错误信息
+           switch (HTTPCOM.getError()) {
+               case ERROR_STATUS:              // 请求状态错误
+               case ERROR_REQUEST_OVERTIME:    // 请求超时
+               case ERROR_INVALID_RESPONSE:    // 接收信息无效
+               case ERROR_DECODE:              // 回复信息解码错误
+               Log(TAG_COM_RES, "Backend Not Reached! Bike Not Available");
+               Log(HTTPCOM.getResponse());
+                       // 骑行状态中车辆状态不应发生改变，否则无法还车  
+                       if (RENTSTATE.getState() != RENT) {
+                           // 车辆状态：不可用
+                           RENTSTATE.changeState(NOT_AVAILABLE);
+                       }
+               break;
+               default:
+               Error(TAG_COM_RES + ": " + (int) HTTPCOM.getResponse());
+               break;
+           }
+       }
 
-    }
+   }
 
     // 读卡操作
     switch (CARD.searchCard(RENTSTATE.getState())) {
@@ -208,7 +217,6 @@ void loop() {
                                 // 开锁
                                 LOCK.unlock();
                                 Log(TAG_LOCK, "Unlock Success!");
-                                LOCK.unlock();
 
                                 // 交互模块：用户信息
                                 Log(TAG_COM_RES, HTTPCOM.getResponse_UserID());
@@ -301,7 +309,7 @@ void loop() {
                 int returnCount = 0;
 
                 // 反复请求还车直至成功
-                while (!returnSuccess || returnCount++ <= MAX_REQUEST_COUNT) {
+                while (!returnSuccess && returnCount++ <= MAX_REQUEST_COUNT) {
                     // 请求还车
                     returnSuccess = HTTPCOM.requestReturn(BIKEID, serNum);
 
@@ -320,7 +328,8 @@ void loop() {
                                     // 交互模块：用户信息
                                     Log(TAG_COM_RES, HTTPCOM.getResponse_UserID());
                                     Log(TAG_COM_RES, HTTPCOM.getResponse_Balance());
-                                    DISPLAYS.displayDetails(HTTPCOM.getResponse(), HTTPCOM.getResponse_UserID().c_str(), HTTPCOM.getResponse_Balance().c_str());
+                                    Log(TAG_COM_RES, HTTPCOM.getResponse_Duration());
+                                    DISPLAYS.displayDetails(HTTPCOM.getResponse(), HTTPCOM.getResponse_UserID().c_str(), HTTPCOM.getResponse_Balance().c_str(), HTTPCOM.getResponse_Duration().c_str());
                                 break;
 
                                 case RETURN_FAIL_USER_NOT_MATCH:        // 还车失败：用户信息冲突
@@ -410,3 +419,4 @@ void loop() {
     // 循环终止操作
     loopTerm();
 }
+

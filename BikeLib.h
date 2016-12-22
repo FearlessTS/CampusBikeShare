@@ -177,6 +177,7 @@ class LocationUpdate {
         LocationUpdate();
 
         unsigned long getLastUpdate();
+        void setLastUpdate(unsigned long currentTime);
         bool needUpdate(const RENT_STATE state);
         void pauseUpdate();
         void resumeUpdate();
@@ -306,11 +307,12 @@ class Display {
         const unsigned long DURATION = 5000;
         const unsigned long DURATION_LONG = 10000;
 
-        const char* CHAR_COM = (TAG_COM + ":").c_str();
-        const char* CHAR_COM_RES = (TAG_COM_RES + ":").c_str();
-        const char* CHAR_COM_DETAILS = (TAG_COM_DETAILS + ":").c_str();
+        char* CHAR_COM = (TAG_COM + ":").c_str();
+        char* CHAR_COM_RES = (TAG_COM_RES + ":").c_str();
+        char* CHAR_COM_DETAILS = (TAG_COM_DETAILS + ":").c_str();
+        char* CHAR_COM_CARD = (TAG_CARD + ":").c_str();
 
-        const char* CHAR_MSG_ERROR = "System Error!";
+        char* CHAR_MSG_ERROR = "System Error!";
 
         // x坐标取值
         const int LEFT_EDGE = 0;

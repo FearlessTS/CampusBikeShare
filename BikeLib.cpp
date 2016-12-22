@@ -242,6 +242,15 @@ unsigned long LocationUpdate::getLastUpdate() {
 }
 
 /**
+ * 改变上次定位时间
+ * param 当前时刻
+*/
+void RoutineUpdate::setLastUpdate(unsigned long currentTime){
+    _lastUpdate = currentTime;
+}
+
+
+/**
  * 检查是否需要进行定位（依现在借车状态而定）
  * @return true - 需要; false - 不需要
  */
@@ -323,12 +332,16 @@ bool LocationUpdate::doUpdate() {
                 break;
             }
         }
+        Log(TAG_LOCATION, "GPS Overtime!");
+    }
+    else {
+        Log(TAG_LOCATION, "GPS Init Fail!");
     }
 
     // 关闭GPS
     sim808.detachGPS();
     // 更新时间
-    _lastUpdate = sysTime();
+    setLastUpdate(sysTime());
 
     return locateSuccess;
 }
@@ -337,7 +350,7 @@ bool LocationUpdate::doUpdate() {
  * 重置定位信息（定位前重置）
  */
 void LocationUpdate::resetLocation() {
-    _lastUpdate = millis();
+    setLastUpdate(sysTime());
     _updatePaused = false;
 
     // 重置定位信息
@@ -355,7 +368,24 @@ void LocationUpdate::reset() {
     _longitude = 1000;
 }
 
+/**
+ * 获取纬度信息
+ * @return 纬度
+ */
+float LocationUpdate::getLatitude() {
+    return _latitude;
+}
+
+/**
+ * 获取经度信息
+ * @return 经度
+ */
+float LocationUpdate::getLongitude() {
+    return _longitude;
+}
+
 // private:
+
 
 
 //////////////////////////////////////
@@ -614,10 +644,9 @@ void HTTPCom::resetResponse() {
     _userID = "";
     _balance = "";
     _duration = "";
-    _request = "";
     _state = RESPONSE_NULL;
-    sim808.HTTP_HTTPTERM();
-    sim808.HTTP_SAPBR_0_1();
+    sim808.reset_HTTP_HTTPTERM();
+    sim808.reset_HTTP_SAPBR_0_1();
 }
 
 // private:
@@ -685,7 +714,7 @@ bool HTTPCom::sendRequest() {
         return requestSuccess;
     }
 
-    // 连接到制定URL
+    // 连接到指定URL
     requestSuccess = sim808.HTTP_HTTPPARA_URL(_request);
     delay(INTERVAL_SHORT);
     if (!requestSuccess) {
@@ -697,7 +726,7 @@ bool HTTPCom::sendRequest() {
         _state = ERROR_REQUEST_OVERTIME;
         return requestSuccess;
     }
-    Log("Send request!");
+    /*Log("Send request!");*/
 
     // 发送请求
     requestSuccess = sim808.HTTP_HTTPACTION();
@@ -755,6 +784,7 @@ bool HTTPCom::sendRequest() {
  * @return          true - 解码成功; false - 解码失败
  */
 bool HTTPCom::decodeResponse(String response) {
+
     int start = response.indexOf("{");
     int end = response.lastIndexOf("}");
     response = response.substring(start, end + 1);
@@ -851,6 +881,8 @@ void Display::displayWait() {
         // 选择信息
         u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, "Please Wait...");
     } while(u8g.nextPage());
+
+    delay(2000);
 }
 
 /**
@@ -1052,6 +1084,7 @@ void Display::displayComMSG(const RESPONSE_MSG msg) {
                     u8g.print(msg);
                 } else {
                     u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_MSG_ERROR);
+                }
             break;
             case ERROR_DECODE:
                 if (isDebug) {
@@ -1162,7 +1195,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
         switch(msg) {
             case NOTHING:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1172,7 +1205,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case NEW_CARD_DETECTED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1181,7 +1214,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case NEW_CARD_CONFIRMED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1191,7 +1224,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case SAME_CARD_AGAIN:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1201,7 +1234,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case CARD_DETATCHED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1211,7 +1244,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case CARD_DETATCH_CONFIRMED:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1220,7 +1253,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case CARD_READ_STOP:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1230,7 +1263,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case ERROR_DIFFERENT_CARD:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1240,7 +1273,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case ERROR_NOT_AVAILABLE_CARD:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1250,7 +1283,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             case ERROR_OTHER_CARD:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_COM_CARD);
                     u8g.setPrintPos(LEFT_TAB_2, LINE_1_OF_1);
                     u8g.print(msg);
                 } else {
@@ -1260,7 +1293,7 @@ void Display::displayCardMSG(const CARD_MSG msg) {
             break;
             default:
                 if (isDebug) {
-                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, TAG_CARD + ":");
+                    u8g.drawStr(LEFT_INDENT, LINE_1_OF_2, CHAR_COM_CARD);
                     u8g.drawStr(LEFT_INDENT, LINE_2_OF_2, CHAR_MSG_ERROR);
                 } else {
                     u8g.drawStr(LEFT_INDENT, LINE_1_OF_1, CHAR_MSG_ERROR);
@@ -1334,6 +1367,9 @@ unsigned long sysTime() {
 inline bool withinInterval(const unsigned long start, const unsigned long end, const unsigned long interval) {
     // 时间溢出
     if (end < start) {
+
+        // 时间溢出后需要重置_lastUpdate
+        setLastUpdate(sysTime());
         return false;
     }
 
@@ -1355,7 +1391,7 @@ float readBatteryLevel() {
     // 读取电量
     
     // 读取失败
-    return -1.00;
+    return 1.00;
 }
 
 
@@ -1434,5 +1470,6 @@ bool loopTerm() {
     if (DISPLAYS.isDisplaying()) {
         DISPLAYS.displayClear();
     }
+    delay(200);
     return true;
 }
