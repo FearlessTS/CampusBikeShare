@@ -177,7 +177,6 @@ class LocationUpdate {
         LocationUpdate();
 
         unsigned long getLastUpdate();
-        void setLastUpdate(unsigned long currentTime);
         bool needUpdate(const RENT_STATE state);
         void pauseUpdate();
         void resumeUpdate();

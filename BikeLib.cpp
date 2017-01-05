@@ -241,14 +241,6 @@ unsigned long LocationUpdate::getLastUpdate() {
     return _lastUpdate;
 }
 
-/**
- * 改变上次定位时间
- * param 当前时刻
-*/
-void RoutineUpdate::setLastUpdate(unsigned long currentTime){
-    _lastUpdate = currentTime;
-}
-
 
 /**
  * 检查是否需要进行定位（依现在借车状态而定）
@@ -341,7 +333,7 @@ bool LocationUpdate::doUpdate() {
     // 关闭GPS
     sim808.detachGPS();
     // 更新时间
-    setLastUpdate(sysTime());
+    _lastUpdate = sysTime();
 
     return locateSuccess;
 }
@@ -350,7 +342,7 @@ bool LocationUpdate::doUpdate() {
  * 重置定位信息（定位前重置）
  */
 void LocationUpdate::resetLocation() {
-    setLastUpdate(sysTime());
+    _lastUpdate = sysTime();
     _updatePaused = false;
 
     // 重置定位信息
@@ -1369,7 +1361,7 @@ inline bool withinInterval(const unsigned long start, const unsigned long end, c
     if (end < start) {
 
         // 时间溢出后需要重置_lastUpdate
-        setLastUpdate(sysTime());
+        _lastUpdate = sysTime();
         return false;
     }
 
