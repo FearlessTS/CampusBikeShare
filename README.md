@@ -1,2 +1,2 @@
-# CampusBikeShare
-Arduino code for campus sharing bikes.
+# bike-sharing-lock
+Arduino code of lock controls for campus bike sharing.
